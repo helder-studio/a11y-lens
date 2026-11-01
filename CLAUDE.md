@@ -10,6 +10,9 @@ overlay on device, report in tests. PDF: "Library 4: A11y Lens".
 - `src/core/tree.ts`: `HostNode` (react-test-renderer `toJSON()` shape), `readA11y` (legacy + ARIA props),
   `textOf`. `src/core/announce.ts`: VoiceOver / TalkBack wording. `src/core/analyze.ts`: order,
   grouping, warnings. `src/core/report.ts`: `getA11yReport`, `toMarkdown`.
+- `src/core/suggest.ts`: AI fix suggestions. The library never calls a model: users pass
+  `complete(prompt)` (their backend; README shows the Anthropic SDK with `claude-opus-5-5`).
+  Warnings carry their host `node` so the prompt can include testIDs, icon names and text.
 - `src/fiber.ts`: fiber → `HostNode` via `__REACT_DEVTOOLS_GLOBAL_HOOK__`, `measureInWindow`
   (Fabric `canonical.publicInstance` first). `src/lens.ts`: scan store.
 - `src/native/A11yLens.tsx`: overlay, panel, standalone button, `a11yLensTab`.

@@ -23,6 +23,8 @@ export interface Warning {
   /** Reading-order index of the element it belongs to, if any. */
   index?: number;
   frame?: Frame;
+  /** The host node it is about, for tooling such as fix suggestions. */
+  node?: HostNode;
 }
 
 export interface A11yElement {
@@ -88,12 +90,17 @@ export function analyze(root: HostNode | HostNode[] | string | null, platform: P
   const elements: A11yElement[] = [];
   const warnings: Warning[] = [];
 
-  const warn = (code: WarningCode, message: string, at: { index?: number; frame?: Frame }) => {
+  const warn = (
+    code: WarningCode,
+    message: string,
+    at: { index?: number; frame?: Frame; node: HostNode },
+  ) => {
     warnings.push({
       code,
       message,
       ...(at.index !== undefined && { index: at.index }),
       ...(at.frame && { frame: at.frame }),
+      node: at.node,
     });
   };
 
@@ -120,7 +127,7 @@ export function analyze(root: HostNode | HostNode[] | string | null, platform: P
       node,
     };
     elements.push(el);
-    const at = { index, ...(node.frame && { frame: node.frame }) };
+    const at = { index, node, ...(node.frame && { frame: node.frame }) };
 
     const actionable = a.interactive || ACTIONABLE_ROLES.has(role ?? '');
     if (actionable && !label) {
@@ -174,9 +181,7 @@ export function analyze(root: HostNode | HostNode[] | string | null, platform: P
         warn(
           'image-no-label',
           'Image has no label. Add one, or mark it decorative with accessible={false}.',
-          {
-            ...(node.frame && { frame: node.frame }),
-          },
+          { node, ...(node.frame && { frame: node.frame }) },
         );
       }
       return;
@@ -205,7 +210,7 @@ export function analyze(root: HostNode | HostNode[] | string | null, platform: P
         warn(
           'hidden-interactive',
           'This accessible container hides pressable children: screen readers can only reach the container.',
-          { index, ...(node.frame && { frame: node.frame }) },
+          { index, node, ...(node.frame && { frame: node.frame }) },
         );
       }
       for (const child of node.children ?? []) walkImages(child, Boolean(label));

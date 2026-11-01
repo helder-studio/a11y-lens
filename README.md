@@ -50,6 +50,7 @@ Tap the ♿ button, switch on the overlay, and pick VoiceOver or TalkBack wordin
 - 🗣️ **Announcements**: label, value, role, state and hint, worded like VoiceOver or TalkBack
 - ⚠️ **Warnings**: pressables without a label, "Button, button", touch targets under 44×44 pt / 48×48 dp
   (hitSlop counted), images without a label, accessible containers hiding pressable children
+- 🤖 **AI fix suggestions**: opt-in, bring your own model; proposes labels like "Close" for an X icon
 - 🧪 **Reports for tests**: `getA11yReport(screen.toJSON())` in React Native Testing Library, as data
   or Markdown
 - 🧩 **Zero adoption**: works on plain React Native components, legacy `accessibility*` and ARIA props
@@ -71,6 +72,49 @@ test('checkout is accessible', () => {
 ```
 
 Touch-target checks need real layout, so they only run on device.
+
+## AI fix suggestions (opt-in)
+
+Turn "pressable has no label" into a ready-to-paste fix. A11y Lens builds the prompt (reading order,
+each warning, ids, icon names, nearby text) and parses the reply; you choose the model and call it
+from your own backend, so no API key ships in the app.
+
+```ts
+// Your backend, e.g. a Next.js route: keeps the API key off the device.
+import Anthropic from '@anthropic-ai/sdk';
+
+const client = new Anthropic();
+
+export async function POST(req: Request) {
+  const { prompt } = await req.json();
+  const message = await client.messages.create({
+    model: 'claude-opus-5-5', // or a smaller model such as claude-haiku-5-5
+    max_tokens: 16000,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  const text = message.content.flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('');
+  return Response.json({ text });
+}
+```
+
+```ts
+// In the app (dev builds): the panel now shows "Suggest fixes (AI)".
+import { a11yLens } from '@helder-studio/a11y-lens';
+
+a11yLens.configure({
+  complete: async (prompt) => {
+    const res = await fetch('https://dev.example.com/api/a11y-fix', {
+      method: 'POST',
+      body: JSON.stringify({ prompt }),
+    });
+    return (await res.json()).text;
+  },
+});
+```
+
+In tests, call it directly: `await suggestFixes(analyze(screen.toJSON(), 'ios'), complete)` returns
+`[{ index, code, label, fix }]`. `buildFixPrompt` and `parseFixes` are exported if you want to
+drive the model yourself.
 
 ## With dev-dock
 

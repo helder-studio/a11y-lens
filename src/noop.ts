@@ -14,6 +14,8 @@ export const a11yLens = {
   setPlatform: noop,
   showOverlay: noop,
   scan: async () => ({ platform: 'ios' as const, elements: [], warnings: [] }),
+  configure: noop,
+  suggest: async () => [],
 };
 
 export function A11yLens(_props: { enabled: boolean }): null {

@@ -64,7 +64,16 @@ export function A11yLensOverlay() {
 
 /** Panel content: overlay switch, reader choice, element list and warnings. Also the dev-dock tab. */
 export function A11yLensPanel() {
-  const { showOverlay, platform, analysis, scanning } = useLens();
+  const {
+    showOverlay,
+    platform,
+    analysis,
+    scanning,
+    canSuggest,
+    suggesting,
+    suggestions,
+    suggestError,
+  } = useLens();
   useEffect(() => {
     void a11yLens.scan();
   }, []);
@@ -100,6 +109,24 @@ export function A11yLensPanel() {
       {analysis && analysis.warnings.length > 0 && (
         <>
           <Text style={styles.section}>Warnings ({analysis.warnings.length})</Text>
+          {canSuggest && (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => void a11yLens.suggest()}
+              style={styles.chip}
+            >
+              <Text>{suggesting ? 'Asking your model…' : 'Suggest fixes (AI)'}</Text>
+            </Pressable>
+          )}
+          {suggestError && <Text style={styles.warning}>Suggestions failed: {suggestError}</Text>}
+          {suggestions?.map((fix, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: suggestions have no id and never reorder
+            <Text key={`fix${i}`} style={styles.fix}>
+              {fix.index !== undefined ? `#${fix.index} ` : ''}
+              {fix.label ? `"${fix.label}": ` : ''}
+              {fix.fix}
+            </Text>
+          ))}
           {analysis.warnings.map((w, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: warnings have no id and never reorder within a scan
             <Text key={i} style={styles.warning}>
@@ -244,6 +271,7 @@ const styles = StyleSheet.create({
   chipTextOn: { color: '#fff' },
   section: { fontWeight: '600', marginTop: 16 },
   warning: { color: '#d93025' },
+  fix: { color: '#137333' },
   element: { paddingVertical: 4 },
   index: { fontWeight: '700' },
   muted: { color: '#5f6368', fontSize: 12, marginTop: 8 },

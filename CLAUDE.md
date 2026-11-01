@@ -1,5 +1,7 @@
 # @helder-studio/a11y-lens
 
+nShared rules, commands and conventions: @AGENTS.md
+
 Predicts screen-reader order and announcements for React Native screens and flags common issues;
 overlay on device, report in tests. PDF: "Library 4: A11y Lens".
 

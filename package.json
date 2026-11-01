@@ -1,6 +1,6 @@
 {
   "name": "@helder-studio/a11y-lens",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "See what VoiceOver and TalkBack will say before you turn them on: reading-order badges, announcements and warnings over your React Native screens, plus a report for tests.",
   "keywords": [
     "react-native",

@@ -90,7 +90,7 @@ export function readA11y(props: Record<string, unknown>) {
       bool(props['aria-hidden']) === true ||
       props.accessibilityElementsHidden === true ||
       props.importantForAccessibility === 'no-hide-descendants' ||
-      (props.style as { display?: string } | undefined)?.display === 'none',
+      isDisplayNone(props.style),
     /** Excluded itself, children may still be reachable. */
     ignored: props.importantForAccessibility === 'no' || bool(props.accessible) === false,
     interactive: Boolean(
@@ -105,8 +105,36 @@ export function readA11y(props: Record<string, unknown>) {
 }
 
 /** Text content of a subtree, joined with spaces like RN's default label. */
+/** `style` may be an object or a (nested) array, as React Native allows; the last value wins. */
+function isDisplayNone(style: unknown): boolean {
+  if (Array.isArray(style)) {
+    for (let i = style.length - 1; i >= 0; i--) {
+      const display = displayOf(style[i]);
+      if (display !== undefined) return display === 'none';
+    }
+    return false;
+  }
+  return displayOf(style) === 'none';
+}
+
+function displayOf(style: unknown): string | undefined {
+  if (Array.isArray(style)) return isDisplayNone(style) ? 'none' : undefined;
+  return (style as { display?: string } | null | undefined)?.display;
+}
+
+/**
+ * Text content of a subtree like RN's default label: pieces inside one Text run together
+ * ("Hel" + "lo" → "Hello"), separate elements are joined with a space.
+ */
 export function textOf(node: HostNode | string): string {
   if (typeof node === 'string') return node.trim();
   if (readA11y(node.props).hidden) return '';
+  if (kindOf(node.type) === 'text') return rawText(node).replace(/\s+/g, ' ').trim();
   return (node.children ?? []).map(textOf).filter(Boolean).join(' ');
+}
+
+function rawText(node: HostNode | string): string {
+  if (typeof node === 'string') return node;
+  if (readA11y(node.props).hidden) return '';
+  return (node.children ?? []).map(rawText).join('');
 }

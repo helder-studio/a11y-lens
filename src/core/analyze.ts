@@ -48,6 +48,18 @@ export interface Analysis {
 export const MIN_TARGET: Record<Platform, number> = { ios: 44, android: 48 };
 
 const DECORATIVE_ROLES = new Set(['none', 'presentation']);
+/** Roles that make an element focusable and actionable even without an onPress handler. */
+const ACTIONABLE_ROLES = new Set([
+  'button',
+  'link',
+  'checkbox',
+  'switch',
+  'tab',
+  'radio',
+  'adjustable',
+  'slider',
+  'togglebutton',
+]);
 
 function slop(props: Record<string, unknown>): { x: number; y: number } {
   const h = props.hitSlop;
@@ -110,9 +122,7 @@ export function analyze(root: HostNode | HostNode[] | string | null, platform: P
     elements.push(el);
     const at = { index, ...(node.frame && { frame: node.frame }) };
 
-    const actionable =
-      a.interactive ||
-      ['button', 'link', 'checkbox', 'switch', 'tab', 'radio'].includes(role ?? '');
+    const actionable = a.interactive || ACTIONABLE_ROLES.has(role ?? '');
     if (actionable && !label) {
       warn(
         'missing-label',
@@ -123,7 +133,10 @@ export function analyze(root: HostNode | HostNode[] | string | null, platform: P
     const spoken = roleName(role, platform);
     const words = new Set([role?.toLowerCase(), ...spoken.split(/[ ,]+/)].filter(Boolean));
     for (const word of words) {
-      if (word && new RegExp(`\\b${word}\\b`, 'i').test(label)) {
+      if (
+        word &&
+        new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(label)
+      ) {
         warn(
           'role-in-label',
           `Label repeats the role ("${label}, ${spoken}"): drop "${word}" from the label.`,
@@ -182,7 +195,9 @@ export function analyze(root: HostNode | HostNode[] | string | null, platform: P
       );
       return;
     }
-    const groups = a.accessible === true || (a.interactive && a.accessible !== false);
+    // Controls like Switch are focusable through their role alone, without onPress.
+    const actionable = a.interactive || ACTIONABLE_ROLES.has(a.role ?? '');
+    const groups = a.accessible === true || (actionable && a.accessible !== false);
     if (groups) {
       const label = a.label ?? textOf(node);
       const index = add(node, label, a);

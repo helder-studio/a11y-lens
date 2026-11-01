@@ -174,6 +174,45 @@ describe('analyze', () => {
     expect(elements.map((e) => e.announcement)).toEqual(['Profile', 'Logo, image']);
   });
 
+  it('joins text inside one Text without spaces and across elements with one', () => {
+    const tree = h(
+      'View',
+      { accessible: true },
+      h('Text', {}, 'Hel', h('Text', {}, 'lo'), '  world'),
+      h('Text', {}, 'again'),
+    );
+    expect(analyze(tree, 'ios').elements[0]?.label).toBe('Hello world again');
+  });
+
+  it('hides subtrees with display none in style arrays', () => {
+    const tree = h(
+      'View',
+      {},
+      h('View', { style: [{ flex: 1 }, [{ display: 'none' }]] }, h('Text', {}, 'hidden')),
+      h('View', { style: [{ display: 'none' }, { display: 'flex' }] }, h('Text', {}, 'shown')),
+    );
+    expect(analyze(tree, 'ios').elements.map((e) => e.label)).toEqual(['shown']);
+  });
+
+  it('treats role-only controls like Switch as focusable', () => {
+    const tree = h(
+      'View',
+      {},
+      h('RCTSwitch', { role: 'switch', 'aria-checked': true, 'aria-label': 'Wi-Fi' }),
+    );
+    expect(analyze(tree, 'android').elements.map((e) => e.announcement)).toEqual([
+      'on, Wi-Fi, switch',
+    ]);
+    expect(analyze(h('RCTSwitch', { role: 'switch' }), 'ios').warnings.map((w) => w.code)).toEqual([
+      'missing-label',
+    ]);
+  });
+
+  it('copes with regex characters in custom roles', () => {
+    const tree = h('View', { accessible: true, role: 'c++', 'aria-label': 'Compile c++' });
+    expect(() => analyze(tree, 'ios')).not.toThrow();
+  });
+
   it('handles empty input', () => {
     expect(analyze(null, 'ios').elements).toEqual([]);
     expect(analyze('raw', 'ios').elements).toEqual([]);

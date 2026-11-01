@@ -34,3 +34,6 @@ export const a11yLensTab = {
   subscribe: () => noop,
   render: () => null,
 };
+
+export type { AgentTool } from './agent';
+export const a11yAgentTools: import('./agent').AgentTool[] = [];

@@ -129,6 +129,23 @@ import { DevDock } from '@helder-studio/dev-dock';
 </>;
 ```
 
+## Let AI coding agents check accessibility (React Native)
+
+Register `a11yAgentTools` with [Rozenite for Agents](https://www.rozenite.dev) and an agent can scan
+the screen you have open and read the report, then fix the code:
+
+```tsx
+import { useRozeniteInAppAgentTool } from '@rozenite/agent-bridge';
+import { a11yAgentTools } from '@helder-studio/a11y-lens';
+
+function AgentTools() {
+  for (const t of a11yAgentTools) useRozeniteInAppAgentTool({ domain: 'helder-studio', ...t });
+  return null;
+}
+```
+
+Tools: `a11y-scan` (Markdown report), `a11y-overlay`.
+
 ## How accurate is it?
 
 The lens walks the React tree through the DevTools hook React Native installs in dev builds, applies
